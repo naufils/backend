@@ -1,6 +1,9 @@
+require('dotenv').config();
+
+const mongoose = require('mongoose');
 const express = require('express');
 const mysql = require('mysql');
-
+const Razorpay = require("razorpay");
 const bodyParser = require('body-parser');
 const config=require('./db_details.js');
 
@@ -16,6 +19,41 @@ var bcrypt = require('bcryptjs');
 const fs=require('fs');
 const fileType = require('file-type');
 const app = express();
+
+//Added By ThyDreams Studio.
+//Author : Dibyajyoti Mishra 
+//c/o: ThyDreams Studio.
+
+//*********************************************************************************************** */
+// DB connection
+mongoose.connect(process.env.MONGOURI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  useCreateIndex: true,
+});
+
+//Response when DB is connection is successful
+mongoose.connection.on('connected', () => {
+  console.log('DB CONNECTED');
+});
+
+//Response when DB is connection failed
+mongoose.connection.on('error', () => {
+  console.log('Some Error has occurred in the connection.Please check again!');
+});
+
+const razorpay = new Razorpay({
+  key_id: process.env.KEY,
+  key_secret: process.env.SECRET,
+});
+
+const subscriptionRoutes = require("./routes/subscription");
+const subscriberRoutes = require("./routes/subscriber");
+
+app.use("/api", subscriptionRoutes);
+app.use("/api", subscriberRoutes);
+
+//*********************************************************************************************** */
 
 var cors = require('cors')
 app.use(cors())
@@ -1053,9 +1091,58 @@ app.post("/admin/fetch_byVideo", (req, res) => {
   }
 })
 
+//Added By ThyDreams Studio.
+//Author : Dibyajyoti Mishra 
+//c/o: ThyDreams Studio.
+
+app.post("/user/subscribers",(req,res) => {
+  const {name, email, phone } = req.body;
+  if(!name || !email || !phone){
+    res.status(422).json("Please Fill All The Details.")
+  }
+  else {
+
+    var sql = "INSERT INTO subscribers(name,email,phone) values(name, email, phone)"
+    res.locals.connection.query(sql, (error, results, fields) => {
+      if(error) throw error;
+      res.send(JSON.stringify(results));
+  });
+}
+});
+
+app.post("/user/pay", async(req,res) => {
+  //const amount =  * 100;
+
+  const payment_capture = 1;
+  const currency = "INR";
+
+  const options = {
+    amount: amount,
+    currency,
+    //receipt: .toString(),
+    payment_capture,
+  };
+  try {
+    const response = await razorpay.orders.create(options, (err, order) => {
+      if (err) {
+        console.error(err);
+        return res
+          .status(500)
+          .json({ error: "Some Error has occurred. Are you online?" });
+      }
+
+      return res.status(200).json({
+        id: order.id,
+        amount: order.amount,
+        currency: order.currency,
+      });
+    });
+  } catch (error) {
+    console.log(error);
+  }
+})
 
 
-  
 app.listen(8080,()=>{
     console.log(`Server is above to start at port number 8080`);
 });
