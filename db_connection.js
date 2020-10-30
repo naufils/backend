@@ -15,7 +15,18 @@ const dbconn=()=>{
     //  throw err;
     else
     console.log("Connected!");
+    var sql = "CREATE TABLE subscribers name VARCHAR(100), email VARCHAR(300), phone INT(10)"
+    var check = "SHOW TABLES LIKE 'subscribers'"
+    if(check !=='subscribers'){
+    con.query(sql,(err, result) => {  
+      if (err){
+        res.status(500).json({error: "Some error occurred. Couldn't create Table"})
+      };  
+      console.log("Table created");  
+      });
+    } 
   });
+
   return con;
 }
 

@@ -1,6 +1,9 @@
+require('dotenv').config();
+
+const mongoose = require('mongoose');
 const express = require('express');
 const mysql = require('mysql');
-
+const Razorpay = require("razorpay");
 const bodyParser = require('body-parser');
 const config=require('./db_details.js');
 
@@ -17,13 +20,99 @@ const fs=require('fs');
 const fileType = require('file-type');
 const app = express();
 
+//Added By ThyDreams Studio.
+//Author : Dibyajyoti Mishra
+//c/o: ThyDreams Studio.
+
+//*********************************************************************************************** */
+// DB connection
+mongoose.connect(process.env.MONGOURI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  useCreateIndex: true,
+});
+
+//Response when DB is connection is successful
+mongoose.connection.on('connected', () => {
+  console.log('DB CONNECTED');
+});
+
+//Response when DB is connection failed
+mongoose.connection.on('error', () => {
+  console.log('Some Error has occurred in the connection.Please check again!');
+});
+
+const razorpay = new Razorpay({
+    key_id: process.env.RAZOR_KEY,
+    key_secret: process.env.RAZOR_SECRET,
+});
+
+
+var videoWatchCount = new mongoose.Schema({
+  email: {
+    type: String,
+    default: "",
+  },
+  plan_purchased:{
+      type: Boolean,
+      default: false
+  },
+  planB:{
+    type:Date,
+    default:Date.now
+  },
+  planE:{
+    type:Date,
+    default:Date.now
+  },
+  payment_id:{
+    type:String,
+    default:''
+  },
+  amount:{
+    type:Number,
+    default:0
+  },
+  months:{
+    type:Number,
+    default:0
+  },
+  videos_watched:{
+      type:Number,
+      default:0
+  },
+  video_url1:{
+    type:String,
+    default:"none"
+  },
+  video_url2:{
+    type:String,
+    default:"none"
+  }
+});
+
+var vc_model = mongoose.model('videoWatchCountModel', videoWatchCount );
+
+
+
+const subscriptionRoutes = require("./routes/subscription");
+const subscriberRoutes = require("./routes/subscriber");
+
+app.use("/api", subscriptionRoutes);
+app.use("/api", subscriberRoutes);
+
+//*********************************************************************************************** */
+
 var cors = require('cors')
 app.use(cors())
 let connection = mysql.createConnection(config);
 
+
+
+
 app.use(bodyParser.json())
 
-  
+
   // con.connect(function(err) {
   //   if (err) throw err;
   //   console.log("Connected!");
@@ -62,6 +151,307 @@ const uploadFile = (buffer, name, type) => {
 //   ACL: 'public-read', // this is default
 //   uniquePrefix: true // (4.0.2 and above) default is true, setting the attribute to false preserves the original filename in S3
 // }));
+// class FindOne {
+//   st = {
+//     bool1:'',
+//     bool2:''
+//   }
+//   execute_query(query, vc_model, bool_var){
+//     var self = this;
+//
+//     vc_model.findOneAndUpdate(query, { $inc: { videos_watched: 1 } }, function( err, result){
+//     if(err) this.st[bool_var] =  false;
+//     else{
+//       if(result==null){
+//         this.st[bool_var] = false;
+//       }
+//       else if(result.videos_watched>=1 && !result.plan_purchased){
+//         res.send({ 'show_ad': true, 'continue':false });
+//         console.log("show ad stop video");
+//         this.st[bool_var] = true;
+//       }
+//       else if(result.videos_watched<1 && !result.plan_purchased){
+//         res.send({'show_ad': true, 'continue':true});
+//         console.log("show ad show video");
+//         this.st[bool_var] = true;
+//       }
+//       else if(result.plan_purchased) {
+//         res.send({ 'show_ad': false, 'continue':true });
+//         console.log("stop ad show video");
+//         this.st[bool_var] = true;
+//       }
+//     }
+//   })
+//  }
+//   getBool(){
+//     var ele = [];
+//     ele.push(this.st.bool1)
+//     ele.push(this.st.bool2)
+//     return ele;
+//   }
+// }
+
+
+
+app.post('/payInfo', (req, res)=>{
+  console.log(req.body)
+  vc_model.findOne({email:req.body.email})
+  .then((result)=>{
+    console.log(result);
+    if(result.plan_purchased){
+      res.send({'unpaid':false, 'planB':result.planB, 'planE':result.planE, 'payId':result.payment_id, 'amount':(result.amount/100), 'months':result.months})
+    } else {
+      res.send({'unpaid':true})
+    }
+  })
+  .catch((err)=>{
+    res.send({'unpaid':true})
+    console.log(err);
+  });
+})
+
+
+
+
+app.post('/chkStatus', (req, res)=>{
+  console.log(req.body)
+  vc_model.findOne({email:req.body.email})
+  .then((result)=>{
+    console.log(Date.now()-result.planE);
+    if(Date.now()-result.planE>0){
+      vc_model.updateOne({_id:result._id}, {plan_purchased:false})
+    }
+    res.send({success:true})
+  })
+})
+
+app.post('/confirmnsave', (req, res)=>{
+  vc_model.findOne({email:req.body.email})
+  .then((result)=>{
+    vc_model.updateOne({_id:result._id}, {payment_id:req.body.payment_id, plan_purchased:true})
+    .then((result2)=>{
+      console.log("Saved Plan Details")
+    })
+    .catch((err2)=>{
+      console.log("Error in saving plan details");
+    });
+    res.send({success:true})
+  })
+  .catch((err)=>{
+    console.log("yahi error h");
+    res.send({success:false})
+  });
+})
+
+app.post('/paynsubscribe', (req, res)=>{
+
+  var planId = req.body.planId;
+
+  razorpay.plans.fetch(planId)
+  .then((plan)=>{
+    console.log(plan);
+    options = {
+      amount: plan.item.amount,
+      currency: "INR",
+      receipt: "order_rcptid11"
+    }
+    razorpay.orders.create(options)
+    .then((order, err)=>{
+      if(err) console.log("Error creating order")
+      else {
+        console.log(order,"tahi hua");
+        const query1 = {email:req.body.email}
+        vc_model.findOne(query1)
+        .then((result, err)=>{
+          if(err) console.log(err)
+          else
+          {
+            console.log(result)
+            var planE = new Date();
+            if(plan.period=="weekly"){
+              planE.setDate(planE.getDate() + 7);
+            } else if(plan.period=="monthly"){
+              planE.setDate(planE.getDate() + (28*plan.interval));
+            }
+            vc_model.updateOne({ _id: result._id }, { planE: planE, amount: plan.item.amount, months:plan.interval })
+            .then((res)=>{
+              console.log(res)
+            })
+            .catch((err)=>{
+              console.log(err)
+            })
+          }
+        });
+        console.log("amount", order.amount )
+        res.send({
+          cancel:false,
+          amount:order.amount,
+          orderId: order.id,
+          receipt: order.receipt
+        })
+      }
+    })
+  })
+})
+
+app.post("/planpurchased", (req, res)=>{
+  const query1 = {email:req.body.email}
+
+  vc_model.findOne(query1)
+  .then((result, err)=>{
+    if(err) console.log(err)
+    else
+    {
+      if(result.plan_purchased){
+        res.send({'show_ad':false})
+      } else {
+        res.send({'show_ad':true})
+      }
+    }
+  })
+  .catch((err)=>{
+    console.log(err);
+  });
+})
+
+app.post("/iwatched", (req, res) => {
+  console.log(req.body);
+  const query1 = {email:req.body.email, video_url1:req.body.video_url}
+  const query2 = {email:req.body.email, video_url2:req.body.video_url}
+  var show_ad,show_vd;
+  var bool=true;
+
+  vc_model.findOne(query1)
+  .then((result, err)=>{
+    if(err) console.log(err)
+    else
+    {
+      if(result!=null){
+        if(result.plan_purchased){
+          show_vd = true;
+          show_ad = false;
+          return res.send({'show_ad':show_ad, 'show_vd':show_vd})
+        } else {
+          show_vd = true;
+          show_ad = true;
+          return res.send({'show_ad':show_ad, 'show_vd':show_vd})
+        }
+      }
+      else {
+         vc_model.findOne(query2)
+         .then((result, err)=>{
+           if(err) console.log(err)
+           else
+           {
+             if(result!=null){
+               console.log(result);
+               if(result.plan_purchased){
+                 show_vd = true;
+                 show_ad = false;
+                 return res.send({'show_ad':show_ad, 'show_vd':show_vd})
+               } else {
+                 show_vd = true;
+                 show_ad = true;
+                 return res.send({'show_ad':show_ad, 'show_vd':show_vd})
+               }
+             }
+             else {
+               vc_model.findOne({ email: req.body.email })
+                 .then((result2, err2)=>{
+                   console.log((result2.video_url2=="none"), !result2.video_url2);
+                   if(result2.video_url2=="none"){
+                     bool=false;
+                     vc_model.updateOne({ _id: result2._id }, { $inc: { videos_watched: 1 }, video_url2:req.body.video_url })
+                     .then(()=>{
+                       vc_model.findOne({ email: req.body.email })
+                       .then((doc)=>{
+                         if(doc!=null){
+                           if(doc.plan_purchased){
+                             show_vd = true;
+                             show_ad = false;
+                             return res.send({'show_ad':show_ad, 'show_vd':show_vd})
+                           }
+                           if(doc.videos_watched<=2){
+                             show_vd = true;
+                             show_ad = true;
+                             return res.send({'show_ad':show_ad, 'show_vd':show_vd})
+                           } else {
+                             show_vd = false;
+                             show_ad = true;
+                             return res.send({'show_ad':show_ad, 'show_vd':show_vd})
+                           }
+                         } else {
+                           console.log("err q2")
+                         }
+                       })
+                     })
+                   }
+                   if(bool){
+                     console.log(bool,"ye pda gand.....")
+                     vc_model.findOne({ email: req.body.email })
+                       .then((result2, err2)=>{
+                         if(result2.video_url1=="none"){
+
+                           vc_model.updateOne({ _id: result2._id }, { $inc: { videos_watched: 1 }, video_url1:req.body.video_url })
+                           .then((doc)=>{
+                           vc_model.findOne({ email: req.body.email })
+                           .then((doc)=>{
+                             if(doc!=null){
+                               if(doc.plan_purchased){
+                                 show_vd = true;
+                                 show_ad = false;
+                                 return res.send({'show_ad':show_ad, 'show_vd':show_vd})
+                               }
+                               if(doc.videos_watched<=2){
+                                 show_vd = true;
+                                 show_ad = true;
+                                 return res.send({'show_ad':show_ad, 'show_vd':show_vd})
+                               } else {
+                                 show_vd = false;
+                                 show_ad = true;
+                                 return res.send({'show_ad':show_ad, 'show_vd':show_vd})
+                               }
+                             } else {
+                               console.log("err q2")
+                             }
+                           })
+                         })
+                       } else if(result2.plan_purchased){
+                           show_vd = true;
+                           show_ad = false;
+                           return res.send({'show_ad':show_ad, 'show_vd':show_vd})
+                       } else {
+                         show_vd = false;
+                         show_ad = true;
+                         return res.send({'show_ad':show_ad, 'show_vd':show_vd})
+                       }
+                    })
+                   }
+                 })
+             }
+           }
+         })
+       }
+
+         }
+  console.log("bools", show_ad, show_vd);
+})
+})
+
+app.post("/accountcreated", (req,res) => {
+  console.log("account created", req.body)
+  if(req.body!=null){
+    var vc_instance = new vc_model({email:req.body.email})
+    vc_instance.save(function (err) {
+      if (err) return err;
+      else return true;
+    });
+    res.status(200).send({'success':true})
+  } else{
+    res.status(400).send({'success':false})
+  }
+})
+
 
 app.post('/admin/upload/thumbnail', (request, response) => {
   console.log('Request', request);
@@ -106,7 +496,7 @@ app.post('/admin/upload/video', (request, response) => {
 
         response.send({data: true, dataLocation: data.Location});
 
-        
+
       } catch (error) {
         console.log("error",error);
         response.status(400).send({data: false, catch: true});
@@ -160,7 +550,7 @@ app.post('/admin/createVideo', (request, response) => {
                 } else {
                   response.send({data: true, result});
                 }
-              })  
+              })
             } else {
               response.send({data: false});
             }
@@ -219,10 +609,10 @@ app.post('/admin/editVideo', (req, res) => {
                 } else {
                   response.send({data: true, result});
                 }
-                })  
+                })
               } else {
                 response.send({data: false});
-              } 
+              }
           }
         })
 
@@ -260,11 +650,11 @@ app.get('/admin/fetch-allData', (req, res) => {
                       }
                         res.send({data: true, views, feature, subcats, cats});
                         return console.log("result", views);
-                      
+
                     })
-                
+
               })
-            
+
         })
   })
 })
@@ -304,7 +694,7 @@ app.post('/add/subcategory', (req, res) => {
         if(result.affectedRows){
             res.send({data: true, result});
             return console.log("Result", result);
-          
+
         } else {
           res.data({data: false});
           return false;
@@ -383,7 +773,7 @@ app.get("/all-features-fetch", (req, res) => {
       try{
         if(err){
           res.send({data: false, dbError: true});
-          return console.log(err);
+          return console.log("err in all features");
         } else{
           if(result.length !== 0){
             result.map(item => {
@@ -403,12 +793,11 @@ app.get("/all-features-fetch", (req, res) => {
                   } else{
                     if(result1.length!=0){
                     check.push(result1);
-                    console.log("result1", result1)
                     }
 
                     if(featureArray.length == i+1){
                       res.send({data: true, check});
-                    } 
+                    }
                   }
                 }catch(err102){
                   res.send({data: false, catch: true});
@@ -441,7 +830,7 @@ app.get('/fetch-movies', (req, res) => {
                   console.log(err1)
                 } else {
                   if(result1.length != 0){
-                  
+
                     result1.map((item, i) => {
                       console.log("i",i);
                       let sql2="select vf_videos.*,vf_category.*,vf_views.* from vf_videos INNER JOIN vf_views ON vf_videos.view_id=vf_views.view_id JOIN vf_category ON vf_videos.cat_id=vf_category.cat_id where vf_category.cat_name='Movie' and vf_views.view_id="+item.view_id+" and vf_videos.active_flag=1 and vf_videos.deleted_flag=0";
@@ -454,7 +843,7 @@ app.get('/fetch-movies', (req, res) => {
                             if(result2.length!=0){
 
                               check.push(result2);
-                              
+
                               if(result1.length == i+1){
                                 res.send({data: true, check});
                               }
@@ -502,7 +891,7 @@ app.get('/fetch-comedy', (req, res) => {
                   console.log(err1)
                 } else {
                   if(result1.length != 0){
-                  
+
                     result1.map((item, i) => {
                       console.log("i",i, result1.length);
                       let sql2="select vf_videos.*,vf_category.*,vf_views.* from vf_videos INNER JOIN vf_views ON vf_videos.view_id=vf_views.view_id JOIN vf_category ON vf_videos.cat_id=vf_category.cat_id where vf_category.cat_name='Comedy' and vf_views.view_id="+item.view_id+" and vf_videos.active_flag=1 and vf_videos.deleted_flag=0";
@@ -520,8 +909,8 @@ app.get('/fetch-comedy', (req, res) => {
                             } else {
                               if(result1.length == i+1){
                                 res.send({data: true, check});
-                              } 
-                            }                           
+                              }
+                            }
                           }
                         }catch(err104){
                           console.log(err104)
@@ -530,7 +919,7 @@ app.get('/fetch-comedy', (req, res) => {
                           }
                         }
                       })
-                       
+
                     })
 
                   } else {
@@ -562,7 +951,7 @@ app.get('/fetch-shortFilms', (req, res) => {
                   console.log(err1)
                 } else {
                   if(result1.length != 0){
-                  
+
                     result1.map((item, i) => {
                       console.log("i",i, result1.length);
                       let sql2="select vf_videos.*,vf_category.*,vf_views.* from vf_videos INNER JOIN vf_views ON vf_videos.view_id=vf_views.view_id JOIN vf_category ON vf_videos.cat_id=vf_category.cat_id where vf_category.cat_name='Short Films' and vf_views.view_id="+item.view_id+" and vf_videos.active_flag=1 and vf_videos.deleted_flag=0";
@@ -576,12 +965,12 @@ app.get('/fetch-shortFilms', (req, res) => {
                               check.push(result2);
                               if(result1.length == i+1){
                                 res.send({data: true, check});
-                              } 
+                              }
                             } else {
                               if(result1.length == i+1){
                                 res.send({data: true, check});
-                              } 
-                            }  
+                              }
+                            }
                           }
                         }catch(err104){
                           console.log(err104)
@@ -591,7 +980,7 @@ app.get('/fetch-shortFilms', (req, res) => {
                         }
                       })
 
-                      
+
                     })
 
                   } else {
@@ -622,7 +1011,7 @@ app.get('/fetch-CPanti', (req, res) => {
                   console.log(err1)
                 } else {
                   if(result1.length != 0){
-                  
+
                     result1.map((item, i) => {
                       console.log("i",i, result1.length);
                       let sql2="select vf_videos.*,vf_category.*,vf_views.* from vf_videos INNER JOIN vf_views ON vf_videos.view_id=vf_views.view_id JOIN vf_category ON vf_videos.cat_id=vf_category.cat_id where vf_category.cat_name='C Panti' and vf_views.view_id="+item.view_id+" and vf_videos.active_flag=1 and vf_videos.deleted_flag=0";
@@ -639,15 +1028,15 @@ app.get('/fetch-CPanti', (req, res) => {
                               if(result1.length == i+1){
                                 res.send({data: true, check});
                               }
-                              
+
                             } else {
                               if(result1.length == i+1){
                                 res.send({data: true, check});
-                              } 
+                              }
                             }
 
-                            
-                           
+
+
                           }
                         }catch(err104){
                           console.log(err104)
@@ -656,7 +1045,7 @@ app.get('/fetch-CPanti', (req, res) => {
                           }
                         }
                       })
-                       
+
                     })
 
                   } else {
@@ -717,7 +1106,7 @@ app.post('/signup', (req, res) => {
                   console.log(c2);
                   res.send({data: false, catch: true})
                 }
-              })            
+              })
           }
         }
 
@@ -727,7 +1116,7 @@ app.post('/signup', (req, res) => {
       }
     })
 
-    
+
 
   }catch(c1){
     console.log(c1);
@@ -737,7 +1126,7 @@ app.post('/signup', (req, res) => {
 
 
 app.post('/login', (req, res) => {
-
+  console.log(req.body);
   try{
     let email=req.body.email;
     let pass=req.body.pass;
@@ -764,7 +1153,7 @@ app.post('/login', (req, res) => {
                       console.log(errTStore);
                       res.send({data: false, dbError: true});
                     } else {
-                      if(resultTStore.affectedRows){                        
+                      if(resultTStore.affectedRows){
                         res.send({data: true, result, match: true, tInsert: true, token});
                       } else {
                         res.send({data: true, result, match: true, tInsert: false, token})
@@ -772,7 +1161,7 @@ app.post('/login', (req, res) => {
 
                     }
                   } catch(cTStore){
-                    console.log(cTStore);
+                    console.log("ctoken", cTStore);
                     res.send({data: false, catch: true})
                   }
                 })
@@ -792,7 +1181,7 @@ app.post('/login', (req, res) => {
 
 
     const generateToken=(id,type)=>{
-  
+
       var access='auth';
       var token=jwt.sign({id,type},'HomeTheater').toString();
       return token;
@@ -829,7 +1218,7 @@ app.post("/admin/fetch/allVideos", (req, res) => {
 })
 
 app.post("/user_details", (req, res) => {
-  console.log(req.body.token);
+  console.log(" user token",req.body.token);
   let sql="select * from vf_users where user_token=?";
 
   connection.query(sql, [req.body.token], function(err, result) {
@@ -979,7 +1368,7 @@ app.post('/admin/login', (req, res) => {
                       console.log(errTStore);
                       res.send({data: false, dbError: true});
                     } else {
-                      if(resultTStore.affectedRows){                        
+                      if(resultTStore.affectedRows){
                         res.send({data: true, result, match: true, tInsert: true, token});
                       } else {
                         res.send({data: true, result, match: true, tInsert: false, token})
@@ -1007,7 +1396,7 @@ app.post('/admin/login', (req, res) => {
 
 
     const generateToken=(id,type)=>{
-  
+
       var access='auth';
       var token=jwt.sign({id,type},'HomeTheater').toString();
       return token;
@@ -1053,9 +1442,63 @@ app.post("/admin/fetch_byVideo", (req, res) => {
   }
 })
 
+//Added By ThyDreams Studio.
+//Author : Dibyajyoti Mishra
+//c/o: ThyDreams Studio.
+
+app.post("/user/subscribers",(req,res) => {
+  const {name, email, phone } = req.body;
+  if(!name || !email || !phone){
+    res.status(422).json("Please Fill All The Details.")
+  }
+  else {
+
+    var sql = "INSERT INTO subscribers(name,email,phone) values(name, email, phone)"
+    res.locals.connection.query(sql, (error, results, fields) => {
+      if(error) throw error;
+      res.send(JSON.stringify(results));
+  });
+}
+});
+
+app.post("/user/pay", async(req,res) => {
+  //const amount =  * 100;
+
+  const payment_capture = 1;
+  const currency = "INR";
+
+  const options = {
+    amount: amount,
+    currency,
+    //receipt: .toString(),
+    payment_capture,
+  };
+  try {
+    const response = await razorpay.orders.create(options, (err, order) => {
+      if (err) {
+        console.error(err);
+        return res
+          .status(500)
+          .json({ error: "Some Error has occurred. Are you online?" });
+      }
+
+      return res.status(200).json({
+        id: order.id,
+        amount: order.amount,
+        currency: order.currency,
+      });
+    });
+  } catch (error) {
+    console.log(error);
+  }
+})
 
 
-  
-app.listen(8080,()=>{
-    console.log(`Server is above to start at port number 8080`);
+
+
+
+
+
+app.listen(process.env.HOST_PORT ,process.env.HOST_ADDRES,()=>{
+    console.log(`Server is about to start at port number ${process.env.HOST_ADDRESS}:${process.env.HOST_PORT}`);
 });
