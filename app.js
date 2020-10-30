@@ -21,7 +21,11 @@ const fileType = require('file-type');
 const app = express();
 
 //Added By ThyDreams Studio.
+<<<<<<< HEAD
 //Author : Dibyajyoti Mishra
+=======
+//Author : Dibyajyoti Mishra 
+>>>>>>> f93846eedafbf37f2f48b766c0c320608219d08c
 //c/o: ThyDreams Studio.
 
 //*********************************************************************************************** */
@@ -43,6 +47,7 @@ mongoose.connection.on('error', () => {
 });
 
 const razorpay = new Razorpay({
+<<<<<<< HEAD
     key_id: process.env.RAZOR_KEY,
     key_secret: process.env.RAZOR_SECRET,
 });
@@ -95,6 +100,12 @@ var vc_model = mongoose.model('videoWatchCountModel', videoWatchCount );
 
 
 
+=======
+  key_id: process.env.KEY,
+  key_secret: process.env.SECRET,
+});
+
+>>>>>>> f93846eedafbf37f2f48b766c0c320608219d08c
 const subscriptionRoutes = require("./routes/subscription");
 const subscriberRoutes = require("./routes/subscriber");
 
@@ -1443,7 +1454,11 @@ app.post("/admin/fetch_byVideo", (req, res) => {
 })
 
 //Added By ThyDreams Studio.
+<<<<<<< HEAD
 //Author : Dibyajyoti Mishra
+=======
+//Author : Dibyajyoti Mishra 
+>>>>>>> f93846eedafbf37f2f48b766c0c320608219d08c
 //c/o: ThyDreams Studio.
 
 app.post("/user/subscribers",(req,res) => {
@@ -1492,6 +1507,7 @@ app.post("/user/pay", async(req,res) => {
     console.log(error);
   }
 })
+<<<<<<< HEAD
 
 
 
@@ -1502,3 +1518,10 @@ app.post("/user/pay", async(req,res) => {
 app.listen(process.env.HOST_PORT ,process.env.HOST_ADDRES,()=>{
     console.log(`Server is about to start at port number ${process.env.HOST_ADDRESS}:${process.env.HOST_PORT}`);
 });
+=======
+
+
+app.listen(8080,()=>{
+    console.log(`Server is above to start at port number 8080`);
+});
+>>>>>>> f93846eedafbf37f2f48b766c0c320608219d08c

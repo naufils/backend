@@ -16,14 +16,6 @@ var subscriberSchema = new mongoose.Schema({
     plan:{
         type: String,
         ref: "Subscription",
-    },
-    plan_purchased:{
-        type: Boolean,
-        default: false
-    },
-    videos_watched:{
-        type:Number,
-        default:0
     }
   });
 
