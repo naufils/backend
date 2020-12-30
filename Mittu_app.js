@@ -21,11 +21,7 @@ const fileType = require('file-type');
 const app = express();
 
 //Added By ThyDreams Studio.
-<<<<<<< HEAD
 //Author : Dibyajyoti Mishra
-=======
-//Author : Dibyajyoti Mishra 
->>>>>>> f93846eedafbf37f2f48b766c0c320608219d08c
 //c/o: ThyDreams Studio.
 
 //*********************************************************************************************** */
@@ -47,7 +43,6 @@ mongoose.connection.on('error', () => {
 });
 
 const razorpay = new Razorpay({
-<<<<<<< HEAD
     key_id: process.env.RAZOR_KEY,
     key_secret: process.env.RAZOR_SECRET,
 });
@@ -100,12 +95,6 @@ var vc_model = mongoose.model('videoWatchCountModel', videoWatchCount );
 
 
 
-=======
-  key_id: process.env.KEY,
-  key_secret: process.env.SECRET,
-});
-
->>>>>>> f93846eedafbf37f2f48b766c0c320608219d08c
 const subscriptionRoutes = require("./routes/subscription");
 const subscriberRoutes = require("./routes/subscriber");
 
@@ -146,7 +135,7 @@ const uploadFile = (buffer, name, type) => {
   const params = {
     ACL: 'public-read',
     Body: buffer,
-    Bucket: "hometheater-app",
+    Bucket: "mittuapp-app",
     ContentType: type.mime,
     Key: `${name}.${type.ext}`
   };
@@ -464,7 +453,7 @@ app.post("/accountcreated", (req,res) => {
 })
 
 
-app.post('/admin/upload/thumbnail', (request, response) => {
+app.post('/mittu_upload/thumbnail', (request, response) => {
   console.log('Request', request);
   const form = new multiparty.Form();
     form.parse(request, async (error, fields, files) => {
@@ -490,7 +479,7 @@ app.post('/admin/upload/thumbnail', (request, response) => {
     });
 })
 
-app.post('/admin/upload/video', (request, response) => {
+app.post('/mittu_upload/video', (request, response) => {
   const form = new multiparty.Form();
     form.parse(request, async (error, fields, files) => {
       console.log('Files', files);
@@ -515,7 +504,7 @@ app.post('/admin/upload/video', (request, response) => {
     });
 })
 
-app.post('/admin/createVideo', (request, response) => {
+app.post('/mittu_admin/createVideo', (request, response) => {
       try {
         console.log('Req', request.body)
 
@@ -530,7 +519,7 @@ app.post('/admin/createVideo', (request, response) => {
 
         let sql1="insert into video_featured (feature_id,vid_id) values(?,?)";
 
-        let sql = "insert into vf_videos (vid_name, vid_desc, cat_id, subcat_id, view_id, vid_thumbs, vid_location,active_flag, deleted_flag) values('"+name+"', '"+desc+"', ?, ?, ?, ?, ?, 1, 0)";
+        let sql = "insert into mit_videos (vid_name, vid_desc, cat_id, subcat_id, view_id, vid_thumbs, vid_location,active_flag, deleted_flag) values('"+name+"', '"+desc+"', ?, ?, ?, ?, ?, 1, 0)";
         connection.query(sql,[cat, subcat, view, image, video], function(err, result){
           if(err){
             response.send({data: false, dbError: true});
@@ -574,7 +563,7 @@ app.post('/admin/createVideo', (request, response) => {
 });
 
 
-app.post('/admin/editVideo', (req, res) => {
+app.post('/mittu_admin/editVideo', (req, res) => {
   try{
 
     let name=request.body.name.value;
@@ -588,7 +577,7 @@ app.post('/admin/editVideo', (req, res) => {
 
     let sql1="update video_featured set (feature_id,vid_id) values(?,?) where vid_id=?";
 
-    let sql = "update vf_videos set (vid_name, vid_desc, cat_id, subcat_id, view_id, vid_thumbs, vid_location) values(?, ?, ?, ?, ?, ?, ?) where vid_id=?";
+    let sql = "update mit_videos set (vid_name, vid_desc, cat_id, subcat_id, view_id, vid_thumbs, vid_location) values(?, ?, ?, ?, ?, ?, ?) where vid_id=?";
         connection.query(sql,[name, desc, cat, subcat, view, image, video], function(err, result){
           if(err){
             response.send({data: false, dbError: true});
@@ -633,27 +622,27 @@ app.post('/admin/editVideo', (req, res) => {
   }
 })
 
-app.get('/admin/fetch-allData', (req, res) => {
+app.get('/mittu_admin/fetch-allData', (req, res) => {
   console.log("connecting..")
-  let sqlQ1='select * from vf_category';
+  let sqlQ1='select * from mit_category';
   connection.query(sqlQ1, function(errcats, cats){
     if(errcats){
       res.send({data: false, dbError: true});
       return console.log("Error", errcats);
     }
-      let sqlQ2='select * from vf_subcategories';
+      let sqlQ2='select * from mit_subcategories';
         connection.query(sqlQ2, function(errsubcats, subcats){
           if(errsubcats){
             res.send({data: false, dbError: true});
             return console.log("Error", errsubcats);
           }
-            let sqlQ3='select * from vf_featured';
+            let sqlQ3='select * from mit_featured';
               connection.query(sqlQ3, function(errfeature, feature){
                 if(errfeature){
                   res.send({data: false, dbError: true});
                   return console.log("Error", errfeature);
                 }
-                  let sqlQ4='select * from vf_views';
+                  let sqlQ4='select * from mit_views';
                     connection.query(sqlQ4, function(errviews, views){
                       if(errviews){
                         res.send({data: false, dbError: true});
@@ -674,7 +663,7 @@ app.get('/admin/fetch-allData', (req, res) => {
 //   console.log("req", req.body);
 //   let catName= req.body.cat;
 
-//   let sql="insert into vf_category (cat_name, delete_flag, active_flag) values('"+ catName +"',0,1)";
+//   let sql="insert into mit_category (cat_name, delete_flag, active_flag) values('"+ catName +"',0,1)";
 //   connection.query(sql, function(err, result){
 //     if(err){
 //       res.send({data: false, dbError: true});
@@ -691,11 +680,11 @@ app.get('/admin/fetch-allData', (req, res) => {
 //   })
 // })
 
-app.post('/add/subcategory', (req, res) => {
+app.post('/mittu_add/subcategory', (req, res) => {
   console.log("req", req.body);
   let subCat= req.body.subCat;
 
-      let sql="insert into vf_subcategories (subcat_name, subcat_delete_flag, subcat_active_flag) values('"+ subCat +"',0,1)";
+      let sql="insert into mit_subcategories (subcat_name, subcat_delete_flag, subcat_active_flag) values('"+ subCat +"',0,1)";
       connection.query(sql, function(err, result){
         if(err){
           res.send({data: false, dbError: true});
@@ -713,11 +702,11 @@ app.post('/add/subcategory', (req, res) => {
       })
   })
 
-app.post('/add/featured', (req, res) => {
+app.post('/mittu_add/featured', (req, res) => {
   console.log("req", req.body);
   let featured= req.body.featured;
 
-  let sql="insert into vf_featured (feature_name, feature_deleted, feature_active) values('"+ featured +"',0,1)";
+  let sql="insert into mit_featured (feature_name, feature_deleted, feature_active) values('"+ featured +"',0,1)";
   connection.query(sql, function(err, result){
     if(err){
       res.send({data: false, dbError: true});
@@ -734,11 +723,11 @@ app.post('/add/featured', (req, res) => {
   })
 })
 
-app.post('/add/view', (req, res) => {
+app.post('/mittu_add/view', (req, res) => {
   console.log("req", req.body);
   let view= req.body.view;
 
-  let sql="insert into vf_views (view_name, view_deleted, view_active) values('"+ view +"',0,1)";
+  let sql="insert into mit_views (view_name, view_deleted, view_active) values('"+ view +"',0,1)";
   connection.query(sql, function(err, result){
     if(err){
       res.send({data: false, dbError: true});
@@ -756,7 +745,7 @@ app.post('/add/view', (req, res) => {
 })
 
 // app.get('/featureData', (req, res) => {
-//   let sql="select * from vf_featured where (feature_deleted=0 or feature_deleted IS NULL)";
+//   let sql="select * from mit_featured where (feature_deleted=0 or feature_deleted IS NULL)";
 //   connection.query(sql, function(err, result){
 //     if(err){
 //       res.send({data: false, dbError: true});
@@ -779,7 +768,7 @@ app.get("/all-features-fetch", (req, res) => {
     console.log("running")
     let featureArray=[];
     let check=[];
-    let sql="select * from vf_featured where (feature_deleted=0 or feature_deleted IS NULL)";
+    let sql="select * from mit_featured where (feature_deleted=0 or feature_deleted IS NULL)";
     connection.query(sql, function(err, result){
       try{
         if(err){
@@ -795,7 +784,7 @@ app.get("/all-features-fetch", (req, res) => {
 
             featureArray.map((item, i) => {
               console.log("i",i);
-              let sql1="select vf_featured.feature_name, video_featured.feature_id,video_featured.vid_id,vf_videos.vid_name,vf_videos.vid_desc,vf_videos.cat_id,vf_videos.subcat_id,vf_videos.view_id,vf_videos.vid_thumbs,vf_videos.vid_location from video_featured INNER JOIN vf_videos ON video_featured.vid_id=vf_videos.vid_id INNER JOIN vf_featured on video_featured.feature_id=vf_featured.feature_id where video_featured.feature_id="+item+" and vf_videos.active_flag=1 and vf_videos.deleted_flag=0";
+              let sql1="select mit_featured.feature_name, video_featured.feature_id,video_featured.vid_id,mit_videos.vid_name,mit_videos.vid_desc,mit_videos.cat_id,mit_videos.subcat_id,mit_videos.view_id,mit_videos.vid_thumbs,mit_videos.vid_location from video_featured INNER JOIN mit_videos ON video_featured.vid_id=mit_videos.vid_id INNER JOIN mit_featured on video_featured.feature_id=mit_featured.feature_id where video_featured.feature_id="+item+" and mit_videos.active_flag=1 and mit_videos.deleted_flag=0";
               connection.query(sql1, function(err1, result1){
                 try{
                   if(err1){
@@ -833,7 +822,7 @@ app.get('/fetch-movies', (req, res) => {
   try{
     let check=[];
 
-            let sql1="select * from vf_views where (view_deleted=0 or view_deleted IS NULL) && (view_active=1)";
+            let sql1="select * from mit_views where (view_deleted=0 or view_deleted IS NULL) && (view_active=1)";
             connection.query(sql1, function(err1, result1){
               try{
                 if(err1){
@@ -844,7 +833,7 @@ app.get('/fetch-movies', (req, res) => {
 
                     result1.map((item, i) => {
                       console.log("i",i);
-                      let sql2="select vf_videos.*,vf_category.*,vf_views.* from vf_videos INNER JOIN vf_views ON vf_videos.view_id=vf_views.view_id JOIN vf_category ON vf_videos.cat_id=vf_category.cat_id where vf_category.cat_name='Movie' and vf_views.view_id="+item.view_id+" and vf_videos.active_flag=1 and vf_videos.deleted_flag=0";
+                      let sql2="select mit_videos.*,mit_category.*,mit_views.* from mit_videos INNER JOIN mit_views ON mit_videos.view_id=mit_views.view_id JOIN mit_category ON mit_videos.cat_id=mit_category.cat_id where mit_category.cat_name='Movie' and mit_views.view_id="+item.view_id+" and mit_videos.active_flag=1 and mit_videos.deleted_flag=0";
                       connection.query(sql2, function(err2, result2){
                         try{
                           if(err2){
@@ -894,7 +883,7 @@ app.get('/fetch-comedy', (req, res) => {
   try{
     let check=[];
 
-    let sql1="select * from vf_views where (view_deleted=0 or view_deleted IS NULL) && (view_active=1)";
+    let sql1="select * from mit_views where (view_deleted=0 or view_deleted IS NULL) && (view_active=1)";
             connection.query(sql1, function(err1, result1){
               try{
                 if(err1){
@@ -905,7 +894,7 @@ app.get('/fetch-comedy', (req, res) => {
 
                     result1.map((item, i) => {
                       console.log("i",i, result1.length);
-                      let sql2="select vf_videos.*,vf_category.*,vf_views.* from vf_videos INNER JOIN vf_views ON vf_videos.view_id=vf_views.view_id JOIN vf_category ON vf_videos.cat_id=vf_category.cat_id where vf_category.cat_name='Comedy' and vf_views.view_id="+item.view_id+" and vf_videos.active_flag=1 and vf_videos.deleted_flag=0";
+                      let sql2="select mit_videos.*,mit_category.*,mit_views.* from mit_videos INNER JOIN mit_views ON mit_videos.view_id=mit_views.view_id JOIN mit_category ON mit_videos.cat_id=mit_category.cat_id where mit_category.cat_name='Comedy' and mit_views.view_id="+item.view_id+" and mit_videos.active_flag=1 and mit_videos.deleted_flag=0";
                       connection.query(sql2, function(err2, result2){
                         try{
                           if(err2){
@@ -954,7 +943,7 @@ app.get('/fetch-shortFilms', (req, res) => {
     let movieArray=[];
     let check=[];
 
-    let sql1="select * from vf_views where (view_deleted=0 or view_deleted IS NULL) && (view_active=1)";
+    let sql1="select * from mit_views where (view_deleted=0 or view_deleted IS NULL) && (view_active=1)";
             connection.query(sql1, function(err1, result1){
               try{
                 if(err1){
@@ -965,7 +954,7 @@ app.get('/fetch-shortFilms', (req, res) => {
 
                     result1.map((item, i) => {
                       console.log("i",i, result1.length);
-                      let sql2="select vf_videos.*,vf_category.*,vf_views.* from vf_videos INNER JOIN vf_views ON vf_videos.view_id=vf_views.view_id JOIN vf_category ON vf_videos.cat_id=vf_category.cat_id where vf_category.cat_name='Short Films' and vf_views.view_id="+item.view_id+" and vf_videos.active_flag=1 and vf_videos.deleted_flag=0";
+                      let sql2="select mit_videos.*,mit_category.*,mit_views.* from mit_videos INNER JOIN mit_views ON mit_videos.view_id=mit_views.view_id JOIN mit_category ON mit_videos.cat_id=mit_category.cat_id where mit_category.cat_name='Short Films' and mit_views.view_id="+item.view_id+" and mit_videos.active_flag=1 and mit_videos.deleted_flag=0";
                       connection.query(sql2, function(err2, result2){
                         try{
                           if(err2){
@@ -1014,7 +1003,7 @@ app.get('/fetch-CPanti', (req, res) => {
   try{
     let check=[];
 
-    let sql1="select * from vf_views where (view_deleted=0 or view_deleted IS NULL) && (view_active=1)";
+    let sql1="select * from mit_views where (view_deleted=0 or view_deleted IS NULL) && (view_active=1)";
             connection.query(sql1, function(err1, result1){
               try{
                 if(err1){
@@ -1025,7 +1014,7 @@ app.get('/fetch-CPanti', (req, res) => {
 
                     result1.map((item, i) => {
                       console.log("i",i, result1.length);
-                      let sql2="select vf_videos.*,vf_category.*,vf_views.* from vf_videos INNER JOIN vf_views ON vf_videos.view_id=vf_views.view_id JOIN vf_category ON vf_videos.cat_id=vf_category.cat_id where vf_category.cat_name='C Panti' and vf_views.view_id="+item.view_id+" and vf_videos.active_flag=1 and vf_videos.deleted_flag=0";
+                      let sql2="select mit_videos.*,mit_category.*,mit_views.* from mit_videos INNER JOIN mit_views ON mit_videos.view_id=mit_views.view_id JOIN mit_category ON mit_videos.cat_id=mit_category.cat_id where mit_category.cat_name='C Panti' and mit_views.view_id="+item.view_id+" and mit_videos.active_flag=1 and mit_videos.deleted_flag=0";
                       connection.query(sql2, function(err2, result2){
                         try{
                           if(err2){
@@ -1086,7 +1075,7 @@ app.post('/signup', (req, res) => {
     let salt=bcrypt.genSaltSync(10);
     let hashPass=bcrypt.hashSync(pass, salt);
 
-    let uniqueCheck = "select users_email from vf_users where users_email='"+email+"' and users_active_flag=1 and (users_delete_flag=0 or users_delete_flag IS NULL)";
+    let uniqueCheck = "select users_email from mit_users where users_email='"+email+"' and users_active_flag=1 and (users_delete_flag=0 or users_delete_flag IS NULL)";
 
     connection.query(uniqueCheck, (uErr, uniqueResult) => {
       try{
@@ -1098,7 +1087,7 @@ app.post('/signup', (req, res) => {
             res.send({data: true, unique: false, uniqueResult})
           } else {
 
-            let sql="insert into vf_users(users_name, users_password, users_email, users_active_flag) values('"+name+"','"+hashPass+"','"+email+"',1)";
+            let sql="insert into mit_users(users_name, users_password, users_email, users_active_flag) values('"+name+"','"+hashPass+"','"+email+"',1)";
               connection.query(sql, (err, result) => {
 
                 try{
@@ -1142,7 +1131,7 @@ app.post('/login', (req, res) => {
     let email=req.body.email;
     let pass=req.body.pass;
 
-    let sql = "select * from vf_users where users_email='"+email+"' and users_active_flag=1";
+    let sql = "select * from mit_users where users_email='"+email+"' and users_active_flag=1";
     connection.query(sql, (err, result) => {
       try{
         if(err){
@@ -1156,7 +1145,7 @@ app.post('/login', (req, res) => {
               if(passCompare){
 
                 let token=generateToken(result[0].users_id,'1adfc');
-                let tokenStore="update vf_users set user_token='"+token+"' where users_id="+result[0].users_id+" ";
+                let tokenStore="update mit_users set user_token='"+token+"' where users_id="+result[0].users_id+" ";
 
                 connection.query(tokenStore, (errTStore, resultTStore) => {
                   try{
@@ -1205,8 +1194,8 @@ app.post('/login', (req, res) => {
   }
 })
 
-app.post("/admin/fetch/allVideos", (req, res) => {
-  let sql="select * from vf_videos where (deleted_flag=0 or deleted_flag IS NULL) && (active_flag=1 or active_flag IS NULL)"
+app.post("/mittu_admin/fetch/allVideos", (req, res) => {
+  let sql="select * from mit_videos where (deleted_flag=0 or deleted_flag IS NULL) && (active_flag=1 or active_flag IS NULL)"
   connection.query(sql, function(err, result) {
     try{
 
@@ -1230,7 +1219,7 @@ app.post("/admin/fetch/allVideos", (req, res) => {
 
 app.post("/user_details", (req, res) => {
   console.log(" user token",req.body.token);
-  let sql="select * from vf_users where user_token=?";
+  let sql="select * from mit_users where user_token=?";
 
   connection.query(sql, [req.body.token], function(err, result) {
     try{
@@ -1255,7 +1244,7 @@ app.post("/user_details", (req, res) => {
 
 app.post("/searchResult", (req, res) => {
   console.log(req.body)
-  let sql="select * from vf_videos where vid_name LIKE '"+req.body.searchItem+"%' and active_flag=1 and (deleted_flag=0 or deleted_flag IS NULL)"
+  let sql="select * from mit_videos where vid_name LIKE '"+req.body.searchItem+"%' and active_flag=1 and (deleted_flag=0 or deleted_flag IS NULL)"
   connection.query(sql, function(err, result){
     try{
       if(err){
@@ -1280,7 +1269,7 @@ app.post("/searchResult", (req, res) => {
 
 app.get("/search/subcategories", (req, res) => {
   console.log(req.body)
-  let sql="select * from vf_subcategories where subcat_active_flag=1 and (subcat_delete_flag=0 or subcat_delete_flag IS NULL)"
+  let sql="select * from mit_subcategories where subcat_active_flag=1 and (subcat_delete_flag=0 or subcat_delete_flag IS NULL)"
   connection.query(sql, function(err, result){
     try{
       if(err){
@@ -1305,7 +1294,7 @@ app.get("/search/subcategories", (req, res) => {
 
 app.post("/search/category/searchResult", (req, res) => {
   console.log(req.body)
-  let sql="select * from vf_videos where subcat_id=? and active_flag=1 and (deleted_flag=0 or deleted_flag IS NULL)"
+  let sql="select * from mit_videos where subcat_id=? and active_flag=1 and (deleted_flag=0 or deleted_flag IS NULL)"
   connection.query(sql,[req.body.subcat_id], function(err, result){
     try{
       if(err){
@@ -1328,8 +1317,8 @@ app.post("/search/category/searchResult", (req, res) => {
 })
 
 
-app.post('/admin/delete-video', (req, res) => {
-    let sql = "update vf_videos set deleted_flag=1 where vid_id=?";
+app.post('/mittu_admin/delete-video', (req, res) => {
+    let sql = "update mit_videos set deleted_flag=1 where vid_id=?";
     connection.query(sql, [req.body.id], function(err, result){
       try{
         if(err){
@@ -1351,13 +1340,13 @@ app.post('/admin/delete-video', (req, res) => {
 })
 
 
-app.post('/admin/login', (req, res) => {
+app.post('/mittu_admin/login', (req, res) => {
 
   try{
     let email=req.body.email;
     let pass=req.body.pass;
 
-    let sql = "select * from vf_admin where admin_email=?";
+    let sql = "select * from mit_admin where admin_email=?";
     connection.query(sql,[email], (err, result) => {
       try{
         if(err){
@@ -1371,7 +1360,7 @@ app.post('/admin/login', (req, res) => {
               if(passCompare){
 
                 let token=generateToken(result[0].users_id,'1adfc');
-                let tokenStore="update vf_admin set admin_token='"+token+"' where admin_id="+result[0].users_id+" ";
+                let tokenStore="update mit_admin set admin_token='"+token+"' where admin_id="+result[0].users_id+" ";
 
                 connection.query(tokenStore, (errTStore, resultTStore) => {
                   try{
@@ -1421,12 +1410,12 @@ app.post('/admin/login', (req, res) => {
 })
 
 
-app.post("/admin/fetch_byVideo", (req, res) => {
+app.post("/mittu_admin/fetch_byVideo", (req, res) => {
   try{
     console.log("req", req.body)
     let id=req.body.id;
 
-    let sql="select * from vf_videos where vid_id=?";
+    let sql="select * from mit_videos where vid_id=?";
     connection.query(sql,[id], function(err, result){
       try{
         if(err){
@@ -1454,11 +1443,7 @@ app.post("/admin/fetch_byVideo", (req, res) => {
 })
 
 //Added By ThyDreams Studio.
-<<<<<<< HEAD
 //Author : Dibyajyoti Mishra
-=======
-//Author : Dibyajyoti Mishra 
->>>>>>> f93846eedafbf37f2f48b766c0c320608219d08c
 //c/o: ThyDreams Studio.
 
 app.post("/user/subscribers",(req,res) => {
@@ -1507,7 +1492,6 @@ app.post("/user/pay", async(req,res) => {
     console.log(error);
   }
 })
-<<<<<<< HEAD
 
 
 
@@ -1518,10 +1502,3 @@ app.post("/user/pay", async(req,res) => {
 app.listen(process.env.HOST_PORT ,process.env.HOST_ADDRES,()=>{
     console.log(`Server is about to start at port number ${process.env.HOST_ADDRESS}:${process.env.HOST_PORT}`);
 });
-=======
-
-
-app.listen(8080,()=>{
-    console.log(`Server is above to start at port number 8080`);
-});
->>>>>>> f93846eedafbf37f2f48b766c0c320608219d08c
